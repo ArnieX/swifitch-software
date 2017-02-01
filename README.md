@@ -1,8 +1,8 @@
-![](Images/swifitch_looong_header.png)
+![](https://github.com/ArnieX/swifitch/blob/master/Images/swifitch_looong_header.png?raw=true)
 
-Welcome to SWIFITCH SW repository. If you didn't come here through HW repository, and want to know more about SWIFITCH go have a [look]().
+Welcome to SWIFITCH SW repository. If you didn't come here through HW repository, and want to know more about SWIFITCH go have a [look](https://github.com/ArnieX/swifitch).
 
-![](Images/Swifitch_vector.png)
+<img src="https://github.com/ArnieX/swifitch/blob/master/Images/3D_Vector_Swifitch2.png?raw=true" width="500">
 
 ## Dependencies
 - Some MQTT server (If you have Raspberry Pi use Mosquitto)
