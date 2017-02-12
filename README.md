@@ -1,6 +1,6 @@
 ![](https://github.com/ArnieX/swifitch/blob/master/Images/swifitch_looong_header.png?raw=true)
 
-Welcome to SWIFITCH SW repository. If you didn't come here through HW repository, and want to know more about SWIFITCH go have a [look](https://github.com/ArnieX/swifitch).
+Welcome to SWIFITCH SW repository. If you didn't come here through HW repository, and want to know more about SWIFITCH go have a [look](http://swifitch.cz).
 
 <img src="https://github.com/ArnieX/swifitch/blob/master/Images/3D_Vector_Swifitch2.png?raw=true" width="500">
 
@@ -10,36 +10,31 @@ Welcome to SWIFITCH SW repository. If you didn't come here through HW repository
 - Optional that will make your life easier with IoT is Node-RED, plus you can get decent dashboard with Node-RED Dashboard plugin
 - [PlatformIO](https://github.com/platformio/platformio) best Arduino IDE available, hacked from ATOM text editor
 
-- [WiFi Manager](https://github.com/tzapu/WiFiManager)
+- [WiFi Manager](https://github.com/tzapu/WiFiManager) this library is included and quite a bit altered for Swifitch graphics etc.
 - [PubSubClient (MQTT)](https://github.com/knolleary/pubsubclient)
 - ESP8266 WiFi library
 
 Install using PlatformIO Library Manager
 
 ```
-pio lib -g install WiFiManager
 pio lib -g install PubSubClient
 pio lib -g install ESP8266wifi
 ```
 
 ## Getting started
 
-Update main.ino with your custom preferences
+- Flash the software to your freshly soldered Swifitch
+- Connect to the SWIFITCH_XXXXXXX WiFi
+- Click Configure Swifitch
+- Select your WiFi or enter SSID manually
+- Enter settings for your MQTT server - if you do not have one yet, use our public mqtt.swifitch.cz (it isn't guaranteed to be always online, but it should be)
+- Enter you home name, room and device name for MQTT control, see below, omit whitespace between words
 
-- [11] Set desired configuration AP name (This is used when ESP8266 isn't connected to your WiFi router to allow setup)
-- [12] Set password for configuration AP, so that noone else can access it in case your router is OFF
-- [13] Set your MQTT IP address
-- [14] Set your MQTT PORT
+## Configuration screenshots
 
-- [17-22] Change MQTT topics (THIS IS OPTIONAL and I do not recommend to change it for first test of function)
-
-- [34] Set your OTA password, this will be used for secured OTA update using PlatformIO, change this respectively in platformio.ini too
-
-Update platformio.ini with your custom preferences (Do not change unless you want to turn OTA ON)
-
-- [14 and 15] To enable OTA for next updates uncomment these lines and change values to reflect your enviroment
-
-To turn OTA OFF any time, just comment these lines again with ;
+![](https://github.com/ArnieX/swifitch/blob/master/Images/Software/swifitch_sw_config_root.png?raw=true)
+![](https://github.com/ArnieX/swifitch/blob/master/Images/Software/swifitch_sw_config_1.png?raw=true)
+![](https://github.com/ArnieX/swifitch/blob/master/Images/Software/swifitch_sw_config_2.png?raw=true)
 
 ## Usage
 
@@ -54,6 +49,6 @@ Receive back from your device:
 
 |TOPIC|DESCRIPTION|
 |---|---|
-|home/room/swifitch/devicestatus|Will contain device status eg connected|
+|home/room/swifitch/devicestatus|Will contain device status eg. connected|
 |home/pingallresponse|This will contain status after you send pingall request and all devices should respond|
-|home/room/swifitch/status|This listens for status change to set correct status eg in Homebridge|
+|home/room/swifitch/status|This listens for status change to set correct status eg. in Homebridge|
