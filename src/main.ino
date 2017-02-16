@@ -24,14 +24,15 @@ char device_name[40]    = "swifitch-one";
 
 // MQTT Constants
 String mqtt_devicestatus_set_topic    = "";
-String mqtt_relayone_set_topic        = "";
-String mqtt_relayone_get_topic        = "";
+String mqtt_relay_set_topic           = "";
+String mqtt_relay_get_status_topic    = "";
+String mqtt_relay_get_topic           = "";
 String mqtt_pingall_get_topic         = "";
 String mqtt_pingallresponse_set_topic = "";
 String mqtt_pingall_response_text     = "";
 
 // Global
-byte relayone_state = 1;
+byte relay_state = 1;
 long lastReconnectAttempt = 0;
 bool shouldSaveConfig = false;
 
@@ -96,9 +97,10 @@ void mqttConnected() {
 
   // Once connected, publish an announcement...
   client.publish(mqtt_devicestatus_set_topic.c_str(), "connected");
-  client.publish(mqtt_relayone_set_topic.c_str(), "1");
+  client.publish(mqtt_relay_set_topic.c_str(), "1");
   // ... and resubscribe
-  client.subscribe(mqtt_relayone_get_topic.c_str());
+  client.subscribe(mqtt_relay_get_topic.c_str());
+  client.subscribe(mqtt_relay_get_status_topic.c_str());
   client.subscribe(mqtt_pingall_get_topic.c_str());
 
 }
@@ -116,27 +118,41 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   blink();
 
-    if ( s_topic == mqtt_relayone_get_topic.c_str() ) {
+    if ( s_topic == mqtt_relay_get_topic.c_str() ) {
 
       if (s_payload == "1") {
 
-        if (relayone_state != 1) {
+        if (relay_state != 1) {
 
-          digitalWrite(D1,LOW);
-          client.publish(mqtt_relayone_set_topic.c_str(), "1");
-          relayone_state = 1;
+          digitalWrite(D1,LOW);   // LOW when output is NC, HIGH if output is NO
+          client.publish(mqtt_relay_set_topic.c_str(), "1");
+          relay_state = 1;
 
         }
 
       } else if (s_payload == "0") {
 
-        if (relayone_state != 0) {
+        if (relay_state != 0) {
 
-          digitalWrite(D1,HIGH);
-          client.publish(mqtt_relayone_set_topic.c_str(), "0");
-          relayone_state = 0;
+          digitalWrite(D1,HIGH);  // HIGH when output is NC, LOW if output is NO
+          client.publish(mqtt_relay_set_topic.c_str(), "0");
+          relay_state = 0;
 
         }
+
+      }
+
+    } else if ( s_topic == mqtt_relay_get_status_topic.c_str() ) {
+
+      int current_relay_status = digitalRead(D1);
+
+      if ( current_relay_status == 1 ) {
+
+        client.publish(mqtt_relay_set_topic.c_str(), "0");  // 0 if output is NC, 1 if output is NO
+
+      } else if ( current_relay_status == 0 ) {
+
+        client.publish(mqtt_relay_set_topic.c_str(), "1");  // 1 if output is NC, 0 if output is NO
 
       }
 
@@ -267,12 +283,13 @@ void setup() {
     // End save
   }
 
-  mqtt_devicestatus_set_topic    = String(home_name)+"/"+String(room)+"/"+String(device_name)+"/devicestatus";
-  mqtt_relayone_set_topic        = String(home_name)+"/"+String(room)+"/"+String(device_name)+"/status";
-  mqtt_relayone_get_topic        = String(home_name)+"/"+String(room)+"/"+String(device_name);
-  mqtt_pingall_get_topic         = String(home_name)+"/pingall";
-  mqtt_pingallresponse_set_topic = String(home_name)+"/pingallresponse";
-  mqtt_pingall_response_text     = "{\""+String(room)+"/"+String(device_name)+"\":\"connected\"}";
+  mqtt_devicestatus_set_topic     = String(home_name)+"/"+String(room)+"/"+String(device_name)+"/devicestatus";
+  mqtt_relay_set_topic            = String(home_name)+"/"+String(room)+"/"+String(device_name)+"/status";
+  mqtt_relay_get_status_topic     = String(home_name)+"/"+String(room)+"/"+String(device_name)+"/getstatus";
+  mqtt_relay_get_topic            = String(home_name)+"/"+String(room)+"/"+String(device_name);
+  mqtt_pingall_get_topic          = String(home_name)+"/pingall";
+  mqtt_pingallresponse_set_topic  = String(home_name)+"/pingallresponse";
+  mqtt_pingall_response_text      = "{\""+String(room)+"/"+String(device_name)+"\":\"connected\"}";
 
   // After WiFi Configuration
   wifi_station_set_hostname((char*)device_name);

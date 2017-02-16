@@ -43,6 +43,7 @@ Send command through your MQTT server as such:
 |TOPIC|DESCRIPTION|
 |---|---|
 |home/room/swifitch|Send 1/0 to turn ON/OFF|
+|home/room/swifitch/getstatus|Send anything to get current relay pin status (digitalRead) on topic home/room/swifitch/status|
 |home/pingall|Send whatever and you get response at topic home/pingallresponse|
 
 Receive back from your device:
