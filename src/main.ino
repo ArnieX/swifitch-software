@@ -38,7 +38,7 @@ long lastReconnectAttempt = 0;
 bool shouldSaveConfig = false;
 
 // Analog switch
-int isAnalogSwitchConnected = 0; // Change to 1 if you connect analog switch to D2 pin
+int isAnalogSwitchConnected = 1; // Change to 1 if you connect analog switch to D2 pin (Just connect analog switch between D2 and GND)
 
 // Callback to save config
 void saveConfigCallback () {
@@ -181,11 +181,11 @@ void blink() {
 void setup() {
 
   //Relay setup
-  pinMode(D1,OUTPUT);       //Initialize relay GPIO05 > NODEMCU pin D1
-  digitalWrite(D1, LOW);    //Set relay OFF by default - relay NC ON/ NO OFF (so when you flip the switch it will be on) GPIO05 > NODEMCU pin D1
-  pinMode(D2,INPUT);       //Analog switch ON/OFF
-  pinMode(D6, OUTPUT);      //Initialize the SWIFITCH built-in LED - GPIO12 > NODEMCU pin D6
-  digitalWrite(D6, HIGH);   //Turn on SWIFITCH built-in LED
+  pinMode(D1,OUTPUT);         //Initialize relay GPIO05 > NODEMCU pin D1
+  digitalWrite(D1,LOW);       //Set relay OFF by default - relay NC ON/ NO OFF (so when you flip the switch it will be on) GPIO05 > NODEMCU pin D1
+  pinMode(D2,INPUT_PULLUP);   //Analog switch ON/OFF
+  pinMode(D6,OUTPUT);         //Initialize the SWIFITCH built-in LED - GPIO12 > NODEMCU pin D6
+  digitalWrite(D6,HIGH);      //Turn on SWIFITCH built-in LED
   Serial.begin(115200);
 
   // WiFi Configuration
