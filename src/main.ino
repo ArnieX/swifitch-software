@@ -37,8 +37,13 @@ int last_switch_state = 1;
 long lastReconnectAttempt = 0;
 bool shouldSaveConfig = false;
 
+//#define ANALOG //Uncomment for enabling analog switch connected between D2 and GND
+#ifdef ANALOG
 // Analog switch
-int isAnalogSwitchConnected = 1; // Change to 1 if you connect analog switch to D2 pin (Just connect analog switch between D2 and GND)
+long lastAnalogSwitchCheck = 0;
+int debounce_ms = 100; // Check for analog switch state change each ... ms
+// END ANALOG
+#endif
 
 // Callback to save config
 void saveConfigCallback () {
@@ -183,9 +188,13 @@ void setup() {
   //Relay setup
   pinMode(D1,OUTPUT);         //Initialize relay GPIO05 > NODEMCU pin D1
   digitalWrite(D1,LOW);       //Set relay OFF by default - relay NC ON/ NO OFF (so when you flip the switch it will be on) GPIO05 > NODEMCU pin D1
-  pinMode(D2,INPUT_PULLUP);   //Analog switch ON/OFF
   pinMode(D6,OUTPUT);         //Initialize the SWIFITCH built-in LED - GPIO12 > NODEMCU pin D6
   digitalWrite(D6,HIGH);      //Turn on SWIFITCH built-in LED
+
+  #ifdef ANALOG
+  pinMode(D2,INPUT_PULLUP);   //Analog switch ON/OFF
+  #endif
+
   Serial.begin(115200);
 
   // WiFi Configuration
@@ -307,6 +316,7 @@ void setup() {
 
 }
 
+#ifdef ANALOG
 void analogSwitch() {
 
   int switch_state = digitalRead(D2);
@@ -336,11 +346,13 @@ void analogSwitch() {
   last_switch_state = switch_state;
 
 }
+#endif
 
 void loop() {
 
+  long now = millis();
+
   if (!client.connected()) {
-    long now = millis();
     if (now - lastReconnectAttempt > 5000) {
       lastReconnectAttempt = now;
       // Attempt to reconnect
@@ -354,8 +366,13 @@ void loop() {
   }
   ArduinoOTA.handle();
 
-  if ( isAnalogSwitchConnected == 1 ) {
-    analogSwitch();
+#ifdef ANALOG
+  if (now - lastAnalogSwitchCheck > debounce_ms) {
+    lastAnalogSwitchCheck = now;
+
+      analogSwitch();
+
   }
+#endif
 
 }
