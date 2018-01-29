@@ -53,3 +53,7 @@ Receive back from your device:
 |home/room/swifitch/devicestatus|Will contain device status eg. connected|
 |home/pingallresponse|This will contain status after you send pingall request and all devices should respond|
 |home/room/swifitch/status|This listens for status change to set correct status eg. in Homebridge|
+
+## Credits
+
+Thanks goes to [Alexander Luberg](https://github.com/LubergAlexander) for pointing out that there is no need for external pulldown or pullup resistor for analog switch.
