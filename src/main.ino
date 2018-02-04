@@ -8,6 +8,7 @@
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
+#include <fauxmoESP.h>
 
 // Constants
 String autoconf_ssid          = "SWIFITCH_"+String(ESP.getChipId());   // AP name for WiFi setup AP which your ESP will open when not able to connect to other WiFi
@@ -21,6 +22,9 @@ char mqtt_password[40]  = "";
 char home_name[40]      = "myhome";
 char room[40]           = "room";
 char device_name[40]    = "swifitch-one";
+
+// WeMo Emulation
+fauxmoESP fauxmo;
 
 // MQTT Constants
 String mqtt_devicestatus_set_topic    = "";
@@ -183,6 +187,28 @@ void blink() {
 
 }
 
+void toggle()
+{
+  if (relay_state != 1)
+  {
+
+    digitalWrite(D1, LOW); // LOW when output is NC, HIGH if output is NO
+    client.publish(mqtt_relay_set_topic.c_str(), "1");
+    relay_state = 1;
+
+    blink();
+  }
+  else if (relay_state != 0)
+  {
+
+    digitalWrite(D1, HIGH); // HIGH when output is NC, LOW if output is NO
+    client.publish(mqtt_relay_set_topic.c_str(), "0");
+    relay_state = 0;
+
+    blink();
+  }
+}
+
 void setup() {
 
   //Relay setup
@@ -314,6 +340,11 @@ void setup() {
   lastReconnectAttempt = 0;
   digitalWrite(D6, LOW);   //Turn off LED as default, also signal that setup is over
 
+  // WeMo Emulation
+  fauxmo.addDevice(device_name);
+  fauxmo.onMessage([](unsigned char device_id, const char * device_name, bool state) {
+    toggle();
+  });
 }
 
 #ifdef ANALOG
@@ -321,30 +352,13 @@ void analogSwitch() {
 
   int switch_state = digitalRead(D2);
 
-    if ( last_switch_state != switch_state ) {
+  if (last_switch_state != switch_state)
+  {
 
-      if (relay_state != 1) {
-
-        digitalWrite(D1,LOW);   // LOW when output is NC, HIGH if output is NO
-        client.publish(mqtt_relay_set_topic.c_str(), "1");
-        relay_state = 1;
-
-        blink();
-
-      } else if (relay_state != 0) {
-
-        digitalWrite(D1,HIGH);  // HIGH when output is NC, LOW if output is NO
-        client.publish(mqtt_relay_set_topic.c_str(), "0");
-        relay_state = 0;
-
-        blink();
-
-      }
-
+    toggle();
   }
 
   last_switch_state = switch_state;
-
 }
 #endif
 
@@ -352,27 +366,32 @@ void loop() {
 
   long now = millis();
 
-  if (!client.connected()) {
-    if (now - lastReconnectAttempt > 5000) {
+  if (!client.connected())
+  {
+    if (now - lastReconnectAttempt > 5000)
+    {
       lastReconnectAttempt = now;
       // Attempt to reconnect
-      if (reconnect()) {
+      if (reconnect())
+      {
         lastReconnectAttempt = 0;
       }
     }
-  } else {
+  }
+  else
+  {
     // Client connected
     client.loop();
   }
   ArduinoOTA.handle();
+  fauxmo.handle();
 
 #ifdef ANALOG
-  if (now - lastAnalogSwitchCheck > debounce_ms) {
+  if (now - lastAnalogSwitchCheck > debounce_ms)
+  {
     lastAnalogSwitchCheck = now;
 
-      analogSwitch();
-
+    analogSwitch();
   }
 #endif
-
 }
