@@ -19,6 +19,7 @@ Install using PlatformIO Library Manager
 ```
 pio lib -g install PubSubClient
 pio lib -g install ESP8266wifi
+pio lib -g install ESPAsyncTCP
 ```
 
 ## Getting started
@@ -29,6 +30,24 @@ pio lib -g install ESP8266wifi
 - Select your WiFi or enter SSID manually
 - Enter settings for your MQTT server - if you do not have one yet, use our public mqtt.swifitch.cz (it isn't guaranteed to be always online, but it should be)
 - Enter you home name, room and device name for MQTT control, see below, omit whitespace between words
+
+## Flashing
+### How to flash with Arduino UNO
+
+- Remove the chip
+- Connect your Arduino with Swifitch with dupont wires according to this mapping:
+
+| Swifitch     | Arduino |
+|:------------ |:------- |
+| RX           | RX      |
+| TX           | TX      |
+| 3v3          | 3v3     |
+| D3           | GND     |
+| GND          | GND     |
+
+Arduino RESET -> Arduino GND
+
+- Flash with PlatformIO
 
 ## Configuration screenshots
 
@@ -53,6 +72,10 @@ Receive back from your device:
 |home/room/swifitch/devicestatus|Will contain device status eg. connected|
 |home/pingallresponse|This will contain status after you send pingall request and all devices should respond|
 |home/room/swifitch/status|This listens for status change to set correct status eg. in Homebridge|
+
+## Using with Amazon Echo
+
+Swifitch will be automatically discovered by Amazon Echo since it fakes being a WeMo device and it doesn't require any server/homebridge setup.
 
 ## Credits
 
