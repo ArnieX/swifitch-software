@@ -187,25 +187,24 @@ void blink() {
 
 }
 
-void toggle()
-{
-  if (relay_state != 1)
-  {
+void toggle() {
+
+  if (relay_state != 1) {
 
     digitalWrite(D1, LOW); // LOW when output is NC, HIGH if output is NO
     client.publish(mqtt_relay_set_topic.c_str(), "1");
     relay_state = 1;
 
     blink();
-  }
-  else if (relay_state != 0)
-  {
+
+  } else if (relay_state != 0) {
 
     digitalWrite(D1, HIGH); // HIGH when output is NC, LOW if output is NO
     client.publish(mqtt_relay_set_topic.c_str(), "0");
     relay_state = 0;
 
     blink();
+
   }
 }
 
@@ -342,8 +341,24 @@ void setup() {
 
   // WeMo Emulation
   fauxmo.addDevice(device_name);
-  fauxmo.onMessage([](unsigned char device_id, const char * device_name, bool state) {
+  fauxmo.enable(true);
+  fauxmo.onSetState([](unsigned char device_id, const char * device_name, bool state) {
     toggle();
+  });
+  fauxmo.onGetState([](unsigned char device_id, const char * device_name) {
+
+    int current_relay_status = digitalRead(D1);
+
+    if ( current_relay_status == 1 ) {
+
+      return true;
+
+    } else if ( current_relay_status == 0 ) {
+
+      return false;
+
+    }
+
   });
 }
 
@@ -352,13 +367,14 @@ void analogSwitch() {
 
   int switch_state = digitalRead(D2);
 
-  if (last_switch_state != switch_state)
-  {
+  if (last_switch_state != switch_state) {
 
     toggle();
+
   }
 
   last_switch_state = switch_state;
+
 }
 #endif
 
@@ -366,20 +382,17 @@ void loop() {
 
   long now = millis();
 
-  if (!client.connected())
-  {
-    if (now - lastReconnectAttempt > 5000)
-    {
+  if (!client.connected()) {
+
+    if (now - lastReconnectAttempt > 5000) {
+
       lastReconnectAttempt = now;
       // Attempt to reconnect
-      if (reconnect())
-      {
+      if (reconnect()) {
         lastReconnectAttempt = 0;
       }
     }
-  }
-  else
-  {
+  } else {
     // Client connected
     client.loop();
   }
@@ -387,11 +400,12 @@ void loop() {
   fauxmo.handle();
 
 #ifdef ANALOG
-  if (now - lastAnalogSwitchCheck > debounce_ms)
-  {
+  if (now - lastAnalogSwitchCheck > debounce_ms) {
+
     lastAnalogSwitchCheck = now;
 
     analogSwitch();
+
   }
 #endif
 }
