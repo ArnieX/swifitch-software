@@ -77,6 +77,8 @@ Receive back from your device:
 
 Swifitch will be automatically discovered by Amazon Echo since it fakes being a WeMo device and it doesn't require any server/homebridge setup.
 
+**Not working with Gen2 Echo devices, waiting for fix.**
+
 ## HTTP API
 
 |URL|DESCRIPTION|
