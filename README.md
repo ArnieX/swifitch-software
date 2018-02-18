@@ -89,4 +89,4 @@ Swifitch will be automatically discovered by Amazon Echo since it fakes being a 
 
 ## Credits
 
-Thanks goes to [Alexander Luberg](https://github.com/LubergAlexander) for pointing out that there is no need for external pulldown or pullup resistor for analog switch.
+Thanks goes to [Alexander Luberg](https://github.com/LubergAlexander) for pointing out that there is no need for external pulldown or pullup resistor for PHY switch.
