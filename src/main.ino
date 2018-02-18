@@ -13,18 +13,22 @@
 // Constants
 String autoconf_ssid          = "SWIFITCH_"+String(ESP.getChipId());   // AP name for WiFi setup AP which your ESP will open when not able to connect to other WiFi
 const char* autoconf_pwd      = "PASSWORD";                            // AP password so noone else can connect to the ESP in case your router fails
+std::unique_ptr<ESP8266WebServer> server;
 
 // WiFi Manager defaults
-char mqtt_server[40]    = "mqtt.swifitch.cz";   // Public broker
-char mqtt_port[6]       = "1883";
-char mqtt_username[20]  = "";
-char mqtt_password[40]  = "";
-char home_name[40]      = "myhome";
-char room[40]           = "room";
-char device_name[40]    = "swifitch-one";
+char mqtt_server[40]       = "mqtt.swifitch.cz";   // Public broker
+char mqtt_port[6]          = "1883";
+char mqtt_username[20]     = "";
+char mqtt_password[40]     = "";
+char home_name[40]         = "myhome";
+char room[40]              = "room";
+char device_name[40]       = "swifitch-one";
 
+//#define FAUXMO //Uncomment for enabling Fake WeMo Switch for Alexa to discover and control - may not work with Gen2 devices
+#ifdef FAUXMO
 // WeMo Emulation
 fauxmoESP fauxmo;
+#endif
 
 // MQTT Constants
 String mqtt_devicestatus_set_topic    = "";
@@ -37,16 +41,16 @@ String mqtt_pingall_response_text     = "";
 
 // Global
 byte relay_state = 1;
-int last_switch_state = 1;
 long lastReconnectAttempt = 0;
 bool shouldSaveConfig = false;
 
-//#define ANALOG //Uncomment for enabling analog switch connected between D2 and GND
-#ifdef ANALOG
-// Analog switch
-long lastAnalogSwitchCheck = 0;
-int debounce_ms = 100; // Check for analog switch state change each ... ms
-// END ANALOG
+//#define PHYSwitch //Uncomment for enabling physical switch connected between D2 and GND
+#ifdef PHYSwitch
+// Physical switch
+long lastPHYSwitchCheck = 0;
+int debounce_ms = 100; // Check for physical switch state change each ... ms
+int last_switch_state = 1;
+// END PHYSwitch
 #endif
 
 // Callback to save config
@@ -187,25 +191,24 @@ void blink() {
 
 }
 
-void toggle()
-{
-  if (relay_state != 1)
-  {
+void toggle() {
+
+  if (relay_state != 1) {
 
     digitalWrite(D1, LOW); // LOW when output is NC, HIGH if output is NO
     client.publish(mqtt_relay_set_topic.c_str(), "1");
     relay_state = 1;
 
     blink();
-  }
-  else if (relay_state != 0)
-  {
+
+  } else if (relay_state != 0) {
 
     digitalWrite(D1, HIGH); // HIGH when output is NC, LOW if output is NO
     client.publish(mqtt_relay_set_topic.c_str(), "0");
     relay_state = 0;
 
     blink();
+
   }
 }
 
@@ -217,8 +220,8 @@ void setup() {
   pinMode(D6,OUTPUT);         //Initialize the SWIFITCH built-in LED - GPIO12 > NODEMCU pin D6
   digitalWrite(D6,HIGH);      //Turn on SWIFITCH built-in LED
 
-  #ifdef ANALOG
-  pinMode(D2,INPUT_PULLUP);   //Analog switch ON/OFF
+  #ifdef PHYSwitch
+  pinMode(D2,INPUT_PULLUP);   //Physical switch ON/OFF
   #endif
 
   Serial.begin(115200);
@@ -256,7 +259,8 @@ void setup() {
 
   // The extra parameters to be configured
   WiFiManagerParameter custom_text_mqtt("<p>MQTT Settings</p>");
-  WiFiManagerParameter custom_text_home("<p>Home settings</p>");
+  WiFiManagerParameter custom_text_home("<p>Home Settings</p>");
+  WiFiManagerParameter custom_text_amazon("<p>Amazon Echo Settings</p>");
   WiFiManagerParameter custom_mqtt_server("server", "MQTT Server", mqtt_server, 40);
   WiFiManagerParameter custom_mqtt_port("port", "MQTT Port", mqtt_port, 6);
   WiFiManagerParameter custom_mqtt_username("username", "MQTT Username", mqtt_username, 20);
@@ -293,6 +297,8 @@ void setup() {
     delay(5000);
   }
 
+  server.reset(new ESP8266WebServer(WiFi.localIP(), 80));
+
   // Read updated parameters
   strcpy(mqtt_server, custom_mqtt_server.getValue());
   strcpy(mqtt_port, custom_mqtt_port.getValue());
@@ -306,13 +312,13 @@ void setup() {
   if (shouldSaveConfig) {
     DynamicJsonBuffer jsonBuffer;
     JsonObject& json = jsonBuffer.createObject();
-    json["mqtt_server"]   = mqtt_server;
-    json["mqtt_port"]     = mqtt_port;
-    json["mqtt_username"] = mqtt_username;
-    json["mqtt_password"] = mqtt_password;
-    json["home"]          = home_name;
-    json["room"]          = room;
-    json["device"]        = device_name;
+    json["mqtt_server"]        = mqtt_server;
+    json["mqtt_port"]          = mqtt_port;
+    json["mqtt_username"]      = mqtt_username;
+    json["mqtt_password"]      = mqtt_password;
+    json["home"]               = home_name;
+    json["room"]               = room;
+    json["device"]             = device_name;
 
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) {}
@@ -338,27 +344,170 @@ void setup() {
   client.setServer((char*)mqtt_server, atoi(&mqtt_port[0]));
   client.setCallback(callback);
   lastReconnectAttempt = 0;
-  digitalWrite(D6, LOW);   //Turn off LED as default, also signal that setup is over
 
-  // WeMo Emulation
-  fauxmo.addDevice(device_name);
-  fauxmo.onMessage([](unsigned char device_id, const char * device_name, bool state) {
-    toggle();
-  });
+  server->on("/", handleRootPath);
+  server->on("/toggle", handleTogglePath);
+  server->on("/info", handleInfoPath);
+  server->on("/mqtt", handleMQTTPath);
+  server->on("/reset", handleResetPath);
+  server->onNotFound(handleNotFound);
+
+  server->begin();
+  Serial.println("HTTP server started");
+  Serial.println(WiFi.localIP());
+
+
+  #ifdef FAUXMO
+    // WeMo Emulation
+    fauxmo.addDevice(device_name);
+    fauxmo.enable(true);
+    fauxmo.onSetState([](unsigned char device_id, const char * device_name, bool state) {
+      toggle();
+    });
+    fauxmo.onGetState([](unsigned char device_id, const char * device_name) {
+
+      int current_relay_status = digitalRead(D1);
+
+      if ( current_relay_status == 1 ) {
+
+        return true;
+
+      } else if ( current_relay_status == 0 ) {
+
+        return false;
+
+      }
+
+    });
+  #endif
+
+digitalWrite(D6, LOW);   //Turn off LED as default, also signal that setup is over
+
 }
 
-#ifdef ANALOG
-void analogSwitch() {
+void handleRootPath() {
 
-  int switch_state = digitalRead(D2);
+   Serial.println("Root loaded");
+   server->send(200, "text/plain", "Webserver is running");
 
-  if (last_switch_state != switch_state)
-  {
+}
 
-    toggle();
+void handleTogglePath() {
+
+   toggle();
+
+   StaticJsonBuffer<200> jsonBuffer;
+   JsonObject& root = jsonBuffer.createObject();
+   root["response"] = "success";
+   root["relay_state"] = digitalRead(D1);
+
+   String json;
+   root.prettyPrintTo(json);
+
+   server->send(200, "application/json", json);
+
+}
+
+String ipToString(IPAddress ip){
+  String s="";
+  for (int i=0; i<4; i++)
+    s += i  ? "." + String(ip[i]) : String(ip[i]);
+  return s;
+}
+
+void handleInfoPath() {
+
+   StaticJsonBuffer<1000> jsonBuffer;
+   JsonObject& root = jsonBuffer.createObject();
+   root["response"] = "success";
+   root["relay_state"] = digitalRead(D1);
+   root["ip_address"] = ipToString(WiFi.localIP());
+   root["mac_address"] = WiFi.macAddress();
+   root["device_name"] = device_name;
+
+   root["chip_id"] = ESP.getChipId();
+   root["flash_chip_id"] = ESP.getFlashChipId();
+   root["flash_chip_size"] = ESP.getFlashChipSize();
+
+   String json;
+   root.prettyPrintTo(json);
+
+   server->send(200, "application/json", json);
+
+}
+
+void handleMQTTPath() {
+
+   StaticJsonBuffer<1000> jsonBuffer;
+   JsonObject& root = jsonBuffer.createObject();
+   root["response"] = "success";
+   root["mqtt_status"] = client.connected();
+   root["mqtt_broker"] = mqtt_server;
+   root["mqtt_port"] = mqtt_port;
+   root["mqtt_username"] = mqtt_username;
+   root["mqtt_password"] = mqtt_password;
+   root["mqtt_devicestatus_set_topic"] = mqtt_devicestatus_set_topic;
+   root["mqtt_relay_set_topic"] = mqtt_relay_set_topic;
+   root["mqtt_relay_get_status_topic"] = mqtt_relay_get_status_topic;
+   root["mqtt_relay_get_topic"] = mqtt_relay_get_topic;
+   root["mqtt_pingall_get_topic"] = mqtt_pingall_get_topic;
+   root["mqtt_pingallresponse_set_topic"] = mqtt_pingallresponse_set_topic;
+   root["mqtt_pingall_response_text"] = mqtt_pingall_response_text;
+
+   String json;
+   root.prettyPrintTo(json);
+
+   server->send(200, "application/json", json);
+
+}
+
+void handleResetPath() {
+
+   server->send(200, "text/plain", "Reset successful, powercycle your device.");
+   delay(500);
+   WiFiManager wifiManager;
+   wifiManager.resetSettings();
+   delay(500);
+   ESP.reset();
+
+}
+
+void handleNotFound() {
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server->uri();
+  message += "\nMethod: ";
+  message += (server->method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server->args();
+  message += "\n";
+  for (uint8_t i = 0; i < server->args(); i++) {
+    message += " " + server->argName(i) + ": " + server->arg(i) + "\n";
+  }
+  server->send(404, "text/plain", message);
+}
+
+#ifdef PHYSwitch
+void physicalSwitch() {
+
+  long now = millis();
+
+  if (now - lastPHYSwitchCheck > debounce_ms) {
+
+    lastPHYSwitchCheck = now;
+
+    int switch_state = digitalRead(D2);
+
+    if (last_switch_state != switch_state) {
+
+      toggle();
+
+    }
+
+    last_switch_state = switch_state;
+
   }
 
-  last_switch_state = switch_state;
 }
 #endif
 
@@ -366,32 +515,29 @@ void loop() {
 
   long now = millis();
 
-  if (!client.connected())
-  {
-    if (now - lastReconnectAttempt > 5000)
-    {
+  if (!client.connected()) {
+
+    if (now - lastReconnectAttempt > 5000) {
+
       lastReconnectAttempt = now;
       // Attempt to reconnect
-      if (reconnect())
-      {
+      if (reconnect()) {
         lastReconnectAttempt = 0;
       }
     }
-  }
-  else
-  {
+  } else {
     // Client connected
     client.loop();
   }
   ArduinoOTA.handle();
+  server->handleClient();
+
+#ifdef FAUXMO
   fauxmo.handle();
-
-#ifdef ANALOG
-  if (now - lastAnalogSwitchCheck > debounce_ms)
-  {
-    lastAnalogSwitchCheck = now;
-
-    analogSwitch();
-  }
 #endif
+
+#ifdef PHYSwitch
+  physicalSwitch();
+#endif
+
 }

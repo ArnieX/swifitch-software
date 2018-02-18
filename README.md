@@ -77,6 +77,16 @@ Receive back from your device:
 
 Swifitch will be automatically discovered by Amazon Echo since it fakes being a WeMo device and it doesn't require any server/homebridge setup.
 
+## HTTP API
+
+|URL|DESCRIPTION|
+|---|---|
+|/|Check webserver status|
+|/toggle|Change relay state, return JSON response|
+|/info|JSON response with relay status and other device info|
+|/mqtt|JSON response with MQTT status and settings|
+|/reset|Finally reset your Swifitch for returning into WiFi manager, you may need to powercycle after reset.|
+
 ## Credits
 
 Thanks goes to [Alexander Luberg](https://github.com/LubergAlexander) for pointing out that there is no need for external pulldown or pullup resistor for analog switch.

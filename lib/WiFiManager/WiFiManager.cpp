@@ -125,6 +125,8 @@ void WiFiManager::setupConfigPortal() {
   //server->on("/r", std::bind(&WiFiManager::handleReset, this));
   //server->on("/generate_204", std::bind(&WiFiManager::handle204, this));  //Android/Chrome OS captive portal check.
   server->on("/fwlink", std::bind(&WiFiManager::handleRoot, this));  //Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
+  //Relay control - test device
+  server->on("/toggle_relay", std::bind(&WiFiManager::handleToggle, this));
   server->onNotFound (std::bind(&WiFiManager::handleNotFound, this));
   server->begin(); // Web server start
   DEBUG_WM(F("HTTP server started"));
@@ -652,6 +654,38 @@ void WiFiManager::handleInfo() {
   server->send(200, "text/html", page);
 
   DEBUG_WM(F("Sent info page"));
+}
+
+/** Handle the info page */
+void WiFiManager::handleToggle() {
+  DEBUG_WM(F("Toggle"));
+
+  if (relay_state != 1) {
+
+    digitalWrite(D1, LOW); // LOW when output is NC, HIGH if output is NO
+    relay_state = 1;
+
+  } else if (relay_state != 0) {
+
+    digitalWrite(D1, HIGH); // HIGH when output is NC, LOW if output is NO
+    relay_state = 0;
+
+  }
+
+  String page = FPSTR(HTTP_HEAD);
+  page.replace("{v}", "Info");
+  page += FPSTR(HTTP_SCRIPT);
+  page += FPSTR(HTTP_STYLE);
+  page += _customHeadElement;
+  page += FPSTR(HTTP_HEAD_END);
+  page += "<h3>Swifitch relay test</h3>";
+  page += F("<p>Relay flipped</p><br>");
+  page += F("<a href=\"/toggle_relay\">Flip relay</a>");
+  page += FPSTR(HTTP_END);
+
+  server->send(200, "text/html", page);
+
+  DEBUG_WM(F("Sent toggle page"));
 }
 
 void WiFiManager::handleNotFound() {
