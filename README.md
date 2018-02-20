@@ -5,7 +5,7 @@ Welcome to SWIFITCH SW repository. If you didn't come here through HW repository
 <img src="https://github.com/ArnieX/swifitch/blob/master/Images/3D_Vector_Swifitch2.png?raw=true" width="500">
 
 ## Dependencies
-- Some MQTT server (If you have Raspberry Pi use Mosquitto)
+- Some MQTT server (If you have Raspberry Pi use Mosquitto) - this is now optional
 - Optional is [Homebridge](https://github.com/nfarina/homebridge) with [MQTT Plugin](https://github.com/cflurin/homebridge-mqtt) to control the relay from iDevices
 - Optional that will make your life easier with IoT is Node-RED, plus you can get decent dashboard with Node-RED Dashboard plugin
 - [PlatformIO](https://github.com/platformio/platformio) best Arduino IDE available, hacked from ATOM text editor
@@ -28,8 +28,6 @@ pio lib -g install ESPAsyncTCP
 - Connect to the SWIFITCH_XXXXXXX WiFi
 - Click Configure Swifitch
 - Select your WiFi or enter SSID manually
-- Enter settings for your MQTT server - if you do not have one yet, use our public mqtt.swifitch.cz (it isn't guaranteed to be always online, but it should be)
-- Enter you home name, room and device name for MQTT control, see below, omit whitespace between words
 
 ## Flashing
 ### How to flash with Arduino UNO
@@ -51,11 +49,20 @@ Arduino RESET -> Arduino GND
 
 ## Configuration screenshots
 
-![](https://github.com/ArnieX/swifitch/blob/master/Images/Software/swifitch_sw_config_root.png?raw=true)
-![](https://github.com/ArnieX/swifitch/blob/master/Images/Software/swifitch_sw_config_1.png?raw=true)
-![](https://github.com/ArnieX/swifitch/blob/master/Images/Software/swifitch_sw_config_2.png?raw=true)
+![](https://github.com/ArnieX/swifitch/blob/master/Images/Software/swifitch_sw_config_root_new.png?raw=true)
+![](https://github.com/ArnieX/swifitch/blob/master/Images/Software/swifitch_sw_config_1_new.png?raw=true)
 
-## Usage
+## Configuration
+
+After initial configuration of Wi-Fi, go to your browser and open IP address that was assigned to swifitch, followed by /config. You should be asked for login which is admin:swifitch by default. Cannot be changed right now as it is hardcoded.
+
+Within this configuration portal make sure you have set at least hostname, it will make it easier for your to identify and access this module in future using hostname.local URL.
+
+Enabling other functions is merely up to you.
+
+![](https://github.com/ArnieX/swifitch/blob/master/Images/Software/swifitch_sw_web_configuration_portal_new.png?raw=true)
+
+## MQTT
 
 Send command through your MQTT server as such:
 
@@ -73,12 +80,6 @@ Receive back from your device:
 |home/pingallresponse|This will contain status after you send pingall request and all devices should respond|
 |home/room/swifitch/status|This listens for status change to set correct status eg. in Homebridge|
 
-## Using with Amazon Echo
-
-Swifitch will be automatically discovered by Amazon Echo since it fakes being a WeMo device and it doesn't require any server/homebridge setup.
-
-**Not working with Gen2 Echo devices, waiting for fix.**
-
 ## HTTP API
 
 |URL|DESCRIPTION|
@@ -87,8 +88,13 @@ Swifitch will be automatically discovered by Amazon Echo since it fakes being a 
 |/toggle|Change relay state, return JSON response|
 |/info|JSON response with relay status and other device info|
 |/mqtt|JSON response with MQTT status and settings|
-|/reset|Finally reset your Swifitch for returning into WiFi manager, you may need to powercycle after reset.|
+
+## Using with Amazon Echo
+
+Swifitch will be automatically discovered by Amazon Echo since it fakes being a WeMo device and it doesn't require any server/homebridge setup.
+
+**Not working with Gen2 Echo devices, waiting for fix.**
 
 ## Credits
 
-Thanks goes to [Alexander Luberg](https://github.com/LubergAlexander) for pointing out that there is no need for external pulldown or pullup resistor for PHY switch.
+Thanks goes to [Alexander Luberg](https://github.com/LubergAlexander) for pointing out that there is no need for external pulldown or pullup resistor for physical switch.
