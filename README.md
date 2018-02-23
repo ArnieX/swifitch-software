@@ -101,7 +101,7 @@ To control swifitch with physical switch, just connect your existing HW switch t
 
 **DO NOT LEAVE ANY HIGH VOLTAGE WIRES CONNECTED TO THE SWITCH**
 
-<img src="https://github.com/ArnieX/swifitch/blob/master/Images/physical_switch.png?raw=true" width="500">
+<img src="https://github.com/ArnieX/swifitch/blob/master/Images/Software/physical_switch.png?raw=true" width="500">
 
 To enable this function, go to webconfig and enable Physical switch option and save.
 
