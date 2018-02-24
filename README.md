@@ -95,6 +95,16 @@ Swifitch will be automatically discovered by Amazon Echo since it fakes being a 
 
 **Not working with Gen2 Echo devices, waiting for fix.**
 
+## Physical switch
+
+To control swifitch with physical switch, just connect your existing HW switch to swifitch according to scheme.
+
+**DO NOT LEAVE ANY HIGH VOLTAGE WIRES CONNECTED TO THE SWITCH**
+
+<img src="https://github.com/ArnieX/swifitch/blob/master/Images/Software/physical_switch.png?raw=true" width="500">
+
+To enable this function, go to webconfig and enable Physical switch option and save.
+
 ## Credits
 
 Thanks goes to [Alexander Luberg](https://github.com/LubergAlexander) for pointing out that there is no need for external pulldown or pullup resistor for physical switch.
