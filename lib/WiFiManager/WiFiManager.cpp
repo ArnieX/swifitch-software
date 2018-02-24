@@ -386,6 +386,7 @@ void WiFiManager::handleRoot() {
   String page = FPSTR(HTTP_HEAD);
   page.replace("{v}", "Options");
   page += FPSTR(HTTP_SCRIPT);
+  page += FPSTR(HTTP_STYLE_IMG);
   page += FPSTR(HTTP_STYLE);
   page += _customHeadElement;
   page += FPSTR(HTTP_HEAD_END);
@@ -396,7 +397,6 @@ void WiFiManager::handleRoot() {
   page += FPSTR(HTTP_PORTAL_OPTIONS);
   page += FPSTR(HTTP_END);
 
-  delay(500);
   server->send(200, "text/html", page);
 
 }
@@ -552,7 +552,6 @@ void WiFiManager::handleWifi(boolean scan) {
 
   page += FPSTR(HTTP_END);
 
-  delay(500);
   server->send(200, "text/html", page);
 
 
@@ -604,7 +603,7 @@ void WiFiManager::handleWifiSave() {
   String page = FPSTR(HTTP_HEAD);
   page.replace("{v}", "Credentials Saved");
   page += FPSTR(HTTP_SCRIPT);
-  page += FPSTR(HTTP_STYLE);
+  //page += FPSTR(HTTP_STYLE);
   page += _customHeadElement;
   page += FPSTR(HTTP_HEAD_END);
   page += FPSTR(HTTP_SAVED);
