@@ -8,7 +8,7 @@
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
-#include <fauxmoESP.h>
+//#include <fauxmoESP.h>
 
 // Constants
 String autoconf_ssid          = "SWIFITCH_"+String(ESP.getChipId());   // AP name for WiFi setup AP which your ESP will open when not able to connect to other WiFi
@@ -37,7 +37,7 @@ char alexa_status[5]       = "0";
 char alexa_name[40]        = "";
 
 // WeMo Emulation
-fauxmoESP fauxmo;
+//fauxmoESP fauxmo;
 
 
 // MQTT Constants
@@ -354,12 +354,15 @@ void setup() {
 
   // After WiFi Configuration
   if ( strcmp(hostname,"") != 0 ) {
-  wifi_station_set_hostname((char*)hostname);
-  MDNS.begin((char*)hostname);
+    wifi_station_set_hostname((char*)hostname);
+    MDNS.begin((char*)hostname);
+  } else {
+    wifi_station_set_hostname((char*)"SWIFITCH_UNCONFIGURED");
+    MDNS.begin((char*)"SWIFITCH_UNCONFIGURED");
   }
   setup_ota();
 
-  // MQTT Could be disabled by leaving server or port empty
+  // MQTT Could be disabled in web config
   if ( strcmp(mqtt_status,"1") == 0 ) {
     client.setServer((char*)mqtt_server, atoi(&mqtt_port[0]));
     client.setCallback(callback);
@@ -380,7 +383,7 @@ void setup() {
   Serial.println("HTTP server started");
   Serial.println(WiFi.localIP());
 
-
+/*
   if ( strcmp(alexa_status,"1") == 0 ) {
     // WeMo Emulation
     fauxmo.addDevice(device_name);
@@ -404,6 +407,7 @@ void setup() {
 
     });
   }
+*/
 
 digitalWrite(D6, LOW);   //Turn off LED as default, also signal that setup is over
 
@@ -750,6 +754,7 @@ void handleConfigPath() {
             config_page+="	</div>	";
             config_page+="	</div>	";
             config_page+="	<hr>	";
+            /*
             config_page+="	<!-- Select Basic -->	";
             config_page+="	<div class=\"form-group\">	";
             config_page+="	<label class=\"col-md-4 control-label\" for=\"alexa_status\">FauxMO for Amazon Echo</label>	";
@@ -770,6 +775,7 @@ void handleConfigPath() {
             config_page+="	<span class=\"help-block\">This will be used when you tell \"Alexa, turn on kitchen light\".</span>	";
             config_page+="	</div>	";
             config_page+="	</div>	";
+            */
             config_page+="	<!-- Button -->	";
             config_page+="	<div class=\"form-group\">	";
             config_page+="	<label class=\"col-md-4 control-label\" for=\"submit\"></label>	";
@@ -891,9 +897,11 @@ void loop() {
   ArduinoOTA.handle();
   server->handleClient();
 
+/*
 if ( strcmp(alexa_status,"1") == 0 ) {
   fauxmo.handle();
 }
+*/
 
 if ( strcmp(physwitch,"1") == 0 ) {
   physicalSwitch();
